@@ -1,4 +1,6 @@
-# Copyright (C) 2006-2014 Amazon.com, Inc. or its affiliates.
+#!/bin/bash
+
+# Copyright (C) 2014 Amazon.com, Inc. or its affiliates.
 # All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License").
@@ -13,4 +15,20 @@
 # specific language governing permissions and limitations under the
 # License.
 
-KERNEL=="xvd*", PROGRAM="/sbin/ec2udev-vbd %k", SYMLINK+="%c"
+if [ "$#" -ne 1 ] ; then
+  echo "$0 <device path>" >&2
+  exit 1
+fi
+
+grep -qE '\bmaxcpus=' /proc/cmdline
+if [ "$?" -ne 1 ]; then
+  echo "maxcpus set, not bringing up additional cpus" >&2
+  exit 2
+fi
+
+if [ ! -e /sys$1/online ]; then
+  echo "/sys$1/online does not exist" >&2
+  exit 3
+fi
+
+echo 1 > /sys$1/online

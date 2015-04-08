@@ -2,19 +2,17 @@
 
 %bcond_without upstart
 
-%if 0%{?fedora} >= 17
 %define with_systemd 1
 %undefine with_upstart
-%endif
 
 Name:      ec2-utils
 Summary:   A set of tools for running in EC2
-Version:   0.5
+Version:   0.6
 Release:   2%{?_buildid}%{?dist}
 License:   Apache License 2.0
 Group:     System Tools
 Source0:   ec2-metadata
-Source1:   ec2udev
+Source1:   ec2udev-vbd
 Source2:   51-ec2-hvm-devices.rules
 Source3:   52-ec2-vcpu.rules
 Source4:   53-ec2-network-interfaces.rules
@@ -28,11 +26,12 @@ Source11:  ec2ifup.8
 Source12:  ec2ifscan
 Source13:  elastic-network-interfaces.conf
 Source14:  ec2ifscan.8
+Source15:  ec2udev-vcpu
 
 Source20:  ixgbevf.conf
 Source21:  acpiphp.modules
 
-# fedora stuff
+# centos stuff
 Source30:  elastic-network-interfaces.service
 Source31:  ec2-ifup@.service
 
@@ -70,7 +69,7 @@ interfaces.
 
 %install
 rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT/opt/aws/bin
+mkdir -p $RPM_BUILD_ROOT/usr/local/bin
 mkdir -p $RPM_BUILD_ROOT/sbin
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/network-scripts/
@@ -80,14 +79,14 @@ mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/init/
 %endif
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man8/
 
-install -m755 %{SOURCE0} $RPM_BUILD_ROOT/opt/aws/bin/
-%if ! %{?fedora}
+install -m755 %{SOURCE0} $RPM_BUILD_ROOT/usr/local/bin/
+%if ! %{?centos}
 install -m755 %{SOURCE1} $RPM_BUILD_ROOT/sbin/
 %endif
 install -m755 %{SOURCE8} $RPM_BUILD_ROOT/sbin/
 install -m755 %{SOURCE9} $RPM_BUILD_ROOT/sbin/
 install -m755 %{SOURCE12} $RPM_BUILD_ROOT/sbin/
-%if ! %{?fedora}
+%if ! %{?centos}
 install -m644 %{SOURCE2} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 install -m644 %{SOURCE3} $RPM_BUILD_ROOT%{_sysconfdir}/udev/rules.d/
 %endif
@@ -119,9 +118,10 @@ install -m755 -D %{SOURCE21} $RPM_BUILD_ROOT/etc/sysconfig/modules/acpiphp.modul
 rm -rf $RPM_BUILD_ROOT
 
 %files
-/opt/aws/bin/ec2-metadata
-%if ! %{?fedora}
-/sbin/ec2udev
+/usr/local/bin/ec2-metadata
+%if ! %{?centos}
+/sbin/ec2udev-vbd
+/sbin/ec2udev-vcpu
 %{_sysconfdir}/udev/rules.d/51-ec2-hvm-devices.rules
 %{_sysconfdir}/udev/rules.d/52-ec2-vcpu.rules
 %endif
@@ -166,6 +166,15 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Thu May 8 2014 Ben Cressey <bcressey@amazon.com>
+- delay running ec2ifscan until after udev-post
+
+* Fri Apr 11 2014 Ethan Faust <efaust@amazon.com>
+- don't bring up vcpus automatically if maxcpus is set
+
+* Fri Jan 10 2014 Ben Cressey <bcressey@amazon.com>
+- Do not use DNS settings from secondary interfaces by default
+
 * Tue Sep 24 2013 Andrew Jorgensen <ajorgens@amazon.com>
 - Add hotplug script and module config
 

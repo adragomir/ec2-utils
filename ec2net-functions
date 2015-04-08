@@ -110,7 +110,7 @@ rewrite_primary() {
 	ONBOOT=yes
 	TYPE=Ethernet
 	USERCTL=yes
-	PEERDNS=yes
+	PEERDNS=no
 	IPV6INIT=no
 	PERSISTENT_DHCLIENT=yes
 	HWADDR=${HWADDR}
